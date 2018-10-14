@@ -163,7 +163,12 @@ model = Model(inputs=base_model.input, outputs=predictions)
 model.compile(
     optimizer='adam', # adam, rmsprop
     loss='categorical_crossentropy', 
-    metrics=['acc', precision, recall, fmeasure]
+    metrics=[
+        'acc', 
+#        precision, 
+#        recall, 
+#        fmeasure
+    ]
 )
 
 #model.summary()
@@ -173,9 +178,9 @@ g_memory = shapes_count * 4 / 1024 / 1024 / 1024
 print('Model memory size: %.4f (GB)' % (g_memory))
 
 #%% Define callbacks
-#cb_EarlyStop  = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')
-cb_Checkpoint = ModelCheckpoint(checkpoint_fn, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=True, mode='auto', period=1)
-cb_ReduceLR   = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+cb_EarlyStop  = EarlyStopping(monitor='val_acc', min_delta=0.05, patience=10, verbose=2, mode='auto', baseline=None)
+cb_Checkpoint = ModelCheckpoint(checkpoint_fn, monitor='val_acc', verbose=2, save_best_only=True, save_weights_only=True, mode='auto', period=1)
+cb_ReduceLR   = ReduceLROnPlateau(monitor='val_acc', factor=0.1, patience=3, verbose=2, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
 
 #%% Training
 # train the model on the new data for a few epochs
@@ -183,12 +188,12 @@ history = model.fit_generator(
     generator           = train_generator,
     validation_data     = valid_generator,
     steps_per_epoch     = len(train_generator), 
-    epochs              = 10,
+    epochs              = 3,
     max_queue_size      = 16,
     workers             = 4,
     use_multiprocessing = False,
     callbacks=[
-        #cb_EarlyStop,
+        cb_EarlyStop,
         cb_Checkpoint, 
         cb_ReduceLR
     ]
@@ -197,6 +202,7 @@ history = model.fit_generator(
 model.save_weights('Model_NASNetL.h5')
 
 #%% Predict vaildation set
+valid_generator.reset()
 pred_probs = model.predict_generator(valid_generator)
 
 class2index = valid_generator.class_indices
