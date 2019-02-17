@@ -48,9 +48,11 @@ class PipelineHelper(BaseEstimator, TransformerMixin, ClassifierMixin):
         return ret
                
     def get_params(self, deep=False):
-        return {'available_models': self.available_models,
-                'selected_model': self.selected_model,
-                'include_bypass': self.include_bypass}
+        return {
+            'available_models': self.available_models,
+            'selected_model': self.selected_model,
+            'include_bypass': self.include_bypass
+        }
 
     def set_params(self, selected_model, available_models=None, include_bypass=False):
         include_bypass = len(selected_model) == 3 and selected_model[2]
