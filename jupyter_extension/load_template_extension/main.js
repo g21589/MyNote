@@ -3,15 +3,19 @@
 define([
     'require',
     'jquery',
-    'base/js/namespace'
+    'base/js/namespace',
+    './jszip.min',
+    './FileSaver.min'
 ], function(
     requirejs,
     $,
-    Jupyter
+    Jupyter,
+    JSZip,
+    aa
 ) {
     'use strict';
     
-    var model_html = 
+    let model_html = 
 `
 <div class="modal fade" id="pipeChooseModal" tabindex="-1" role="dialog" aria-labelledby="pipeChooseModalLabel">
   <div class="modal-dialog" role="document">
@@ -89,7 +93,7 @@ define([
     
     function load_ipython_extension() {
         
-        var load_code_from_py = function (url) {
+        let load_code_from_py = function (url) {
             
             $.get(url, function(result) {               
                 Jupyter.notebook.insert_cell_at_bottom();
@@ -99,7 +103,7 @@ define([
             
         };
         
-        var load_cells_from_notebook_old = function (url) {
+        let load_cells_from_notebook_old = function (url) {
             
             $.getJSON(url, function(result) {
                 let cells = result.cells;
@@ -113,7 +117,7 @@ define([
             
         };
         
-        var load_cells_from_notebook = function (url) {
+        let load_cells_from_notebook = function (url) {
             
             $.getJSON(url, function(result) {             
                 result['cells'].forEach((cell) => {
@@ -142,21 +146,47 @@ define([
             
         });
         
-        var handler = function () {
-            $('#pipeChooseModal').modal('show');
-        };
-        
-        var action = {
+        let action1 = {
             icon       : 'fa-bolt',
             help       : 'Run Jupyter macro',
             help_index : 'zz',
-            handler    : handler
+            handler    : () => {
+                $('#pipeChooseModal').modal('show');
+            }
         };
-        var prefix = 'load_template_extension';
-        var action_name = 'show-create-gui';
+        let prefix1 = 'load_template_extension';
+        let action_name1 = 'show-create-gui1';
+        let full_action_name1 = Jupyter.actions.register(action1, action_name1, prefix1);
         
-        var full_action_name = Jupyter.actions.register(action, action_name, prefix);
-        Jupyter.toolbar.add_buttons_group([full_action_name]);
+        let action2 = {
+            icon       : 'fa-star',
+            help       : 'Run Jupyter macro',
+            help_index : 'zz',
+            handler    : () => {
+                let notebook_json = Jupyter.notebook.toJSON();
+                let py_code = "";
+                notebook_json['cells'].forEach((cell) => {
+                    if (cell.cell_type == 'code') {
+                        console.log(cell.source);
+                        py_code += cell.source + "\n";
+                    }
+                });
+                var zip = new JSZip();
+                zip.file("main.py", py_code);
+                //var img = zip.folder("images");
+                //img.file("smile.gif", imgData, {base64: true});
+                zip.generateAsync({type:"blob"})
+                .then(function(content) {
+                    //aa.saveAs(content, "example.zip");
+                    location.href = window.URL.createObjectURL(content);
+                });
+            }
+        };
+        let prefix2 = 'load_template_extension';
+        let action_name2 = 'show-create-gui2';
+        let full_action_name2 = Jupyter.actions.register(action2, action_name2, prefix2);       
+        
+        Jupyter.toolbar.add_buttons_group([full_action_name1, full_action_name2]);
     }
 
     return {
