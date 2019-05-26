@@ -201,11 +201,11 @@ define([
                 let source_zip_url = 'http://localhost:8888/files/CustomPkgs/main.zip?download=1';
                 
                 let notebook_json = Jupyter.notebook.toJSON();
-                let py_code = "";
+                let py_code = "def run(**args):\n";
                 notebook_json['cells'].forEach((cell) => {
                     if (cell.cell_type == 'code') {
                         console.log(cell.source);
-                        py_code += cell.source + "\n";
+                        py_code += "    " + cell.source.replace(/(?:\r\n|\r|\n)/g, "\n    ") + "\n\n";
                     }
                 });
                 
