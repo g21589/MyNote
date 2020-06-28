@@ -6,6 +6,7 @@ import threading
 
 import time
 import random
+from io import StringIO
 
 class SingleQueueHandler(logging.handlers.QueueHandler):
     
@@ -21,14 +22,12 @@ class SingleQueueHandler(logging.handlers.QueueHandler):
                     SingleQueueHandler._instance = object.__new__(cls)
         return SingleQueueHandler._instance
 
-
 def get_queue_logger(logger_queue):
     qh = SingleQueueHandler(logger_queue)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(qh)
     return logger
-
 
 def logger_thread(logger_queue, logger):
     if not logger:
@@ -41,14 +40,13 @@ def logger_thread(logger_queue, logger):
             break
         logger.handle(record)
 
-
 def worker(p_a, logger_queue):
     logger = None
     if logger_queue is not None:
         logger = get_queue_logger(logger_queue)
         logger.info('worker start')
         
-        time.sleep(random.randint(2,10))
+        time.sleep(random.randint(2,3))
         
     try:
         raise ValueError('Something error')
@@ -58,7 +56,6 @@ def worker(p_a, logger_queue):
     if logger:
         logger.info('worker end')
     return p_a
-
 
 def mt_process(in_logger):
     if in_logger:
@@ -84,19 +81,37 @@ def mt_process(in_logger):
         in_logger.info('mt_process end')
     return pool_return_rs
 
-
 def create_console_logger():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter(
         '[%(asctime)s][%(module)s][%(filename)s][%(lineno)d][%(funcName)s][%(name)s][%(relativeCreated)d][%(threadName)s][%(levelname)s] %(message)s')
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    console_handler.setFormatter(file_formatter)
-    logger.addHandler(console_handler)
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(file_formatter)
+    logger.addHandler(handler)
     return logger
 
+def create_buffer_logger(buf):
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter(
+        '[%(asctime)s][%(module)s][%(filename)s][%(lineno)d][%(funcName)s][%(name)s][%(relativeCreated)d][%(threadName)s][%(levelname)s] %(message)s')
+    handler = logging.StreamHandler(buf)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(file_formatter)
+    logger.addHandler(handler)
+    return logger
 
 if __name__ == '__main__':
-    t_logger = create_console_logger()
+    
+    buf = StringIO()
+    
+    #t_logger = create_console_logger()
+    t_logger = create_buffer_logger(buf)
     mt_process(t_logger)
+    
+    #buf.seek(0)
+    print(buf.getvalue())
+    buf.close()
+    
